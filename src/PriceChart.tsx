@@ -1,141 +1,16 @@
-import React, { useRef, useState } from "react";
-import { createChart } from "lightweight-charts";
+import React from "react";
+import { useChartInitializer } from "./store";
 
-export function PriceChart({ containerSize, point }) {
-  useInitialChart({ containerSize, point });
-  if (!containerSize) return null
-  return (
-    <div id="container" />
-  );
-}
-
-function useInitialChart({ containerSize, point }) {
-  const chartRef = useRef();
-  const seriesRef = useRef();
-  const [isLoaded, setIsloaded] = useState(false);
-  // const size = useWindowSize();
-
-  React.useEffect(() => {
-    if (!containerSize) return
-    var width = containerSize.width;
-    var height = containerSize.height || 250;
-    // if (chartRef?.current) return
-    // @ts-ignore
-    chartRef.current = createChart(document.getElementById("container"), {
-      width: width,
-      height: height,
-      rightPriceScale: {
-        visible: false
-      },
-      leftPriceScale: {
-        visible: true,
-        scaleMargins: {
-          top: 0.1,
-          bottom: 0.4
-        },
-        borderVisible: false,
-        mode: 1
-      },
-      timeScale: {
-        visible: false
-      },
-      layout: {
-        backgroundColor: "transparent",
-        textColor: "#333"
-      },
-      grid: {
-        horzLines: {
-          visible: false
-        },
-        vertLines: {
-          visible: false
-        }
-      },
-      crosshair: {
-        horzLine: {
-          visible: true
-        },
-        vertLine: {
-          visible: false
-        }
-      }
-    });
-    // @ts-ignore
-    seriesRef.current = chartRef.current.addAreaSeries({
-      topColor: 'rgb(32,189,202, 0.4)',
-      bottomColor: 'rgb(21,43,67, 0.0)',
-      lineColor: 'rgb(21,43,67)',
-      lineWidth: 2
-    });
-    // @ts-ignore
-    chartRef.current.timeScale().setVisibleLogicalRange({
-      from: -1000,
-      to: 0
-    });
-
-    if (seriesRef?.current && chartRef?.current) {
-      setIsloaded(true);
-    }
-  }, [containerSize]);
-
-  // React.useEffect(() => {
-  //   if (seriesRef?.current) {
-  //     // @ts-ignore
-  //     chartRef.current.resize(size.width / 2, size.height / 2);
-  //   }
-  // }, [size]);
-
-  React.useEffect(() => {
-    if (point && seriesRef?.current) {
-      // @ts-ignore
-      seriesRef.current.update(point);
-    }
-  }, [point]);
-
-  return { chart: chartRef?.current, series: seriesRef?.current, isLoaded };
-}
-
-function useWS() {
-  const [point, setPoint] = React.useState(null);
-  // const prevPoint = usePrevious(point);
-
-  React.useEffect(() => {
-    const ws = new WebSocket("wss://stream.binance.com:9443/ws");
-    const msg = {
-      method: "SUBSCRIBE",
-      params: ["btcusdt@trade"],
-      id: 1
-    };
-    ws.onopen = () => {
-      ws.send(JSON.stringify(msg));
-    };
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      // console.log({ data });
-      if (!data?.E || !data?.p) return;
-      // console.log(prevPoint);
-      // if (prevPoint && Math.abs(data.p - prevPoint) < 0.2) return;
-      const newPoint = {
-        time: data.E,
-        value: +data.p
-      };
-
-      setPoint(newPoint);
-
-      return () => {
-        ws.close();
-      };
-    };
-  }, []);
-
-  return point;
+export function PriceChart({ containerSize }) {
+  useChartInitializer({ containerSize });
+  return <div id="container" />;
 }
 
 // Hook
 function usePrevious(value) {
   // The ref object is a generic container whose current property is mutable ...
   // ... and can hold any value, similar to an instance property on a class
-  const ref = useRef();
+  const ref = React.useRef();
   // Store current value in ref
   React.useEffect(() => {
     ref.current = value;
@@ -149,7 +24,7 @@ function useWindowSize() {
   // Learn more here: https://joshwcomeau.com/react/the-perils-of-rehydration/
   const [windowSize, setWindowSize] = React.useState({
     width: undefined,
-    height: undefined
+    height: undefined,
   });
   React.useEffect(() => {
     // Handler to call on window resize
@@ -157,7 +32,7 @@ function useWindowSize() {
       // Set window width/height to state
       setWindowSize({
         width: window.innerWidth,
-        height: window.innerHeight
+        height: window.innerHeight,
       });
     }
     // Add event listener
@@ -170,8 +45,7 @@ function useWindowSize() {
   return windowSize;
 }
 
-
-var data = [
+const data = [
   { time: "2018-03-28", value: 21.0 },
   { time: "2018-03-29", value: 20.8 },
   { time: "2018-03-30", value: 19.4 },
@@ -471,9 +345,5 @@ var data = [
   { time: "2019-05-31", value: 81.2 },
   { time: "2019-06-03", value: 84.35 },
   { time: "2019-06-04", value: 85.66 },
-  { time: "2019-06-05", value: 86.51 }
+  { time: "2019-06-05", value: 86.51 },
 ];
-
-
-
-

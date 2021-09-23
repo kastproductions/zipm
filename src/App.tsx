@@ -1,6 +1,11 @@
 import React from "react";
 import {
-  Spacer, Flex, Button, Box, Stack, Text,
+  Spacer,
+  Flex,
+  Button,
+  Box,
+  Stack,
+  Text,
   FormControl,
   FormLabel,
   FormErrorMessage,
@@ -10,11 +15,11 @@ import {
   NumberInputField,
   NumberInputStepper,
   NumberIncrementStepper,
-  NumberDecrementStepper
+  NumberDecrementStepper,
 } from "@chakra-ui/react";
 import { PriceChart } from "./PriceChart";
 import { history } from "./mock-data";
-import { proxy, useSnapshot } from 'valtio'
+import { useStore } from "./store";
 
 declare global {
   interface Window {
@@ -22,37 +27,20 @@ declare global {
   }
 }
 
-
-const state = proxy({
-  bid: 1,
-  total: 1.005,
-  setBid: (bid) => {
-    state.bid = +bid
-    state.total = +(state.bid + 0.005).toFixed(3)
-  },
-})
-
-function useState() {
-  return useSnapshot(state)
-}
-
 export default function App() {
-  const chartContainerRef = React.useRef()
-  const [containerSize, setSize] = React.useState(null)
-  const point = useWS();
-  const prevPoint = usePrevious(point)
-  const snap = useState()
+  const snap = useStore();
+  const prevPrice = usePrevious(snap.currentPrice);
 
+  const chartContainerRef = React.useRef();
+  const [containerSize, setSize] = React.useState(null);
   React.useEffect(() => {
     const size = {
-      // @ts-ignore
       width: chartContainerRef.current.offsetWidth,
-      // @ts-ignore
-      height: chartContainerRef.current.offsetHeight
-    }
-    console.log(size)
-    setSize(size)
-  }, [])
+      height: chartContainerRef.current.offsetHeight,
+    };
+    console.log(size);
+    setSize(size);
+  }, []);
   // bg='linear-gradient(0deg, rgba(19, 68, 193, 0.4) 0%, rgba(0, 120, 255, 0.0)100%)'
   // bg='linear-gradient(0deg, rgba(19, 68, 193, 0.4) 0%, rgba(0, 120, 255, 0.0)100%)'
 
@@ -61,72 +49,116 @@ export default function App() {
   return (
     <Stack
       height={["full", "100vh"]}
-      minH={['100vh']}
-      bg='gray.100'
-      fontFamily='Roboto'
-    // bgImage='linear-gradient(to bottom,rgb(32,189,202,0.5), rgb(21,43,67,0.5))'
-
+      minH={["100vh"]}
+      bg="gray.100"
+      fontFamily="Roboto"
+      // bgImage='linear-gradient(to bottom,rgb(32,189,202,0.5), rgb(21,43,67,0.5))'
     >
-      <Stack height='full' maxW='8xl' mx='auto' width='full' p={4}>
-        <Stack isInline fontSize={["xl", '3xl']} pb={[1, 4]} alignItems='center'>
-          <Stack flex={1}>
-            <Text m={0} fontWeight='black'>BTC-USDT</Text>
+      <Stack height="full" maxW="8xl" mx="auto" width="full" p={4}>
+        <Stack flex={1} direction={["column", "row"]} spacing={10}>
+          <Stack flex={1} width="full" height="full">
+            <Stack isInline fontSize={["xl", "3xl"]} pb={[1, 4]} alignItems="center" justifyContent="space-between">
+              <Box>
+                <Text m={0} fontWeight="black">
+                  BTC-USDT
+                </Text>
+              </Box>
+              <Box>
+                <Text
+                  textAlign={["right", "center"]}
+                  m={0}
+                  fontWeight="medium"
+                  color={prevPrice?.value > snap.currentPrice?.value ? "red.600" : "green.600"}
+                >
+                  {snap.currentPrice?.value || ""}
+                </Text>
+              </Box>
+            </Stack>
+            <Box flex={1} ref={chartContainerRef} pr={[0]} bg="transparent">
+              <PriceChart containerSize={containerSize} />
+            </Box>
           </Stack>
-          <Stack flex={1}>
-            <Text textAlign={["right", 'center']} m={0} fontWeight='medium' color={prevPoint?.value > point?.value ? 'red.600' : 'green.600'}>{point?.value?.toFixed(2) || ''}</Text>
-          </Stack>
-          <Stack flex={1} display={['none', 'flex']}>
-          </Stack>
-        </Stack>
-        <Stack flex={1} direction={['column', 'row']}>
-          <Stack flex={1} width='full' height='full' ref={chartContainerRef} pr={[0]} bg='transparent'>
-            <PriceChart containerSize={containerSize} point={point} />
-          </Stack>
-          <Stack minW={['full', 'sm']}>
-            <Stack rounded='sm' p={[0, 6]}
-              // boxShadow='base' 
-              // bg='white'
-              spacing={5}
-            >
-              <Text fontSize='sm' fontWeight='medium' >
-                BTC 1 min binary options
-              </Text>
-              <FormControl id="bid" display='flex' alignItems='center'>
-                <FormLabel mb={0} width={48} fontSize='base' fontWeight='semibold'>Order Size</FormLabel>
-                <NumberInput min={1} defaultValue={snap.bid} onChange={snap.setBid} borderColor='gray.700' width={32}>
-                  <NumberInputField rounded='sm' _hover={{}} />
-                  <NumberInputStepper>
-                    <NumberIncrementStepper />
-                    <NumberDecrementStepper />
-                  </NumberInputStepper>
-                </NumberInput>
-              </FormControl>
-              <Stack fontSize='md' fontWeight='semibold' isInline justifyContent='space-between' alignItems='center'>
+          <Stack minW={["full", "sm"]}>
+            <Stack>
+              <Stack spacing={0} pb={4}>
                 <Box>
-                  <Text m={0}>Fee</Text>
+                  <Text fontSize="3xl" fontWeight="medium">
+                    Balance: ${snap.balance}
+                  </Text>
                 </Box>
                 <Box>
-                  <Text m={0}>0.005</Text>
+                  <Text fontSize="sm" fontWeight="medium">
+                    Profit / Loss: ${snap.profit / snap.loss || 0}
+                  </Text>
                 </Box>
               </Stack>
-              <Stack fontSize='md' fontWeight='semibold' isInline justifyContent='space-between' alignItems='center'>
-                <Box>
-                  <Text m={0}>Total</Text>
-                </Box>
-                <Box>
-                  <Text m={0}>{snap.total}</Text>
-                </Box>
+              <Stack rounded="sm" p={[0, 6]} boxShadow="base" bg="white" spacing={5}>
+                <Text fontSize="sm" fontWeight="medium">
+                  BTC 1 min binary options
+                </Text>
+                <FormControl id="bid" display="flex" alignItems="center">
+                  <FormLabel mb={0} width={48} fontSize="base" fontWeight="semibold">
+                    Order Size
+                  </FormLabel>
+                  <NumberInput min={1} defaultValue={snap.bid} onChange={snap.setBid} borderColor="gray.700" width={32}>
+                    <NumberInputField rounded="sm" _hover={{}} />
+                    <NumberInputStepper>
+                      <NumberIncrementStepper />
+                      <NumberDecrementStepper />
+                    </NumberInputStepper>
+                  </NumberInput>
+                </FormControl>
+                <Stack fontSize="md" fontWeight="semibold" isInline justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Text m={0}>Fee</Text>
+                  </Box>
+                  <Box>
+                    <Text m={0}>$0.00</Text>
+                  </Box>
+                </Stack>
+                <Stack fontSize="md" fontWeight="semibold" isInline justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Text m={0}>Total</Text>
+                  </Box>
+                  <Box>
+                    <Text m={0}>${snap.total}</Text>
+                  </Box>
+                </Stack>
               </Stack>
 
               <Stack isInline spacing={8} pt={[1, 4]}>
-                <Button size='lg' width='full' rounded='sm' fontSize='lg' bg='green.600' boxShadow='lg' color='white' _hover={{
-                  bg: 'green.500',
-                  shadow: 'base',
-                }}>Call &#8599;</Button>
-                <Button size='lg' width='full' rounded='sm' fontSize='lg' bg='red.600' boxShadow='lg' color='white' _hover={{
-                  bg: 'red.500',
-                  shadow: 'base',
-                }}>Put &#8600;</Button>
+                <Button
+                  onClick={() => snap.addMarker("up")}
+                  size="lg"
+                  width="full"
+                  rounded="sm"
+                  fontSize="lg"
+                  bg="green.600"
+                  boxShadow="xl"
+                  color="white"
+                  _hover={{
+                    bg: "green.500",
+                    boxShadow: "base",
+                  }}
+                >
+                  Up &#8599;
+                </Button>
+                <Button
+                  onClick={() => snap.addMarker("down")}
+                  size="lg"
+                  width="full"
+                  rounded="sm"
+                  fontSize="lg"
+                  bg="red.600"
+                  boxShadow="xl"
+                  color="white"
+                  _hover={{
+                    bg: "red.500",
+                    boxShadow: "base",
+                  }}
+                >
+                  Down &#8600;
+                </Button>
               </Stack>
             </Stack>
             {/* <Box flex={1} /> */}
@@ -135,95 +167,49 @@ export default function App() {
         {/* <Box pt={4} display={['none', 'block']}>
           <Button fontSize='xl' fontWeight='black'>History</Button>
         </Box> */}
-        <Stack display={['none', 'flex']} rounded='sm' height={64} pt={6}
-
-          // boxShadow='base' bg='white' 
-
-          overflowX='auto' >
-          <Stack isInline width='full' borderBottomWidth='1px' borderColor='gray.700' >
-            {["Timestamp", 'Address', 'Type', "Size", 'Strike Px', 'Settlement Px', "Status"].map((item) => {
-              return (
-                <Box key={item} flex={1}>
-                  <Text fontWeight='bold' textTransform='uppercase' fontSize='sm'>
-                    {item}
-                  </Text>
-                </Box>
-              )
-            })}
+        <Stack display={["none", "flex"]} rounded="sm" height={64} px={6} boxShadow="base" bg="white" overflowX="auto">
+          <Stack isInline width="full" borderBottomWidth="1px" borderColor="gray.700" py={3}>
+            {["Timestamp", "Type", "Size", "Strike Price", "Settlement Price", "Status"].map((item) => (
+              <Box key={item} flex={1}>
+                <Text textAlign="center" fontWeight="bold" textTransform="uppercase" fontSize="sm">
+                  {item}
+                </Text>
+              </Box>
+            ))}
           </Stack>
-          <Stack overflowY='scroll' overflowX='auto' display={['none', 'flex']} >
-            {history.map(item => {
-              return (
-                <Stack isInline width='full' fontSize='sm'>
-                  <Box flex={1}>
-                    <Text m={0}>{item.timestamp}</Text>
-                  </Box>
-                  <Box flex={1}>
-                    <Text m={0}>{item.address}</Text>
-                  </Box>
-                  <Box flex={1}>
-                    <Text m={0}>{item.type}</Text>
-                  </Box>
-                  <Box flex={1}>
-                    <Text m={0}>{item.size}</Text>
-                  </Box>
-                  <Box flex={1}>
-                    <Text m={0}>{item.strikepx}</Text>
-                  </Box>
-                  <Box flex={1}>
-                    <Text m={0}>{item.settlementpx}</Text>
-                  </Box>
-                  <Box flex={1}>
-                    <Text m={0}>{item.status}</Text>
-                  </Box>
-                </Stack>
-              )
-            })}
+          <Stack overflowY="scroll" overflowX="auto" display={["none", "flex"]} textAlign="center">
+            {history.map((item) => (
+              <Stack key={item.timestamp} isInline width="full" fontSize="sm">
+                <Box flex={1}>
+                  <Text m={0}>{item.timestamp}</Text>
+                </Box>
+                <Box flex={1}>
+                  <Text m={0}>{item.type}</Text>
+                </Box>
+                <Box flex={1}>
+                  <Text m={0}>{item.size}</Text>
+                </Box>
+                <Box flex={1}>
+                  <Text m={0}>{item.strikepx}</Text>
+                </Box>
+                <Box flex={1}>
+                  <Text m={0}>{item.settlementpx}</Text>
+                </Box>
+                <Box flex={1}>
+                  <Text m={0}>{item.status}</Text>
+                </Box>
+              </Stack>
+            ))}
           </Stack>
         </Stack>
       </Stack>
     </Stack>
   );
-};
-
-function useWS() {
-  const [point, setPoint] = React.useState(null);
-  // const prevPoint = usePrevious(point);
-
-  React.useEffect(() => {
-    const ws = new WebSocket("wss://stream.binance.com:9443/ws");
-    const msg = {
-      method: "SUBSCRIBE",
-      params: ["btcusdt@trade"],
-      id: 1
-    };
-    ws.onopen = () => {
-      ws.send(JSON.stringify(msg));
-    };
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      // console.log({ data });
-      if (!data?.E || !data?.p) return;
-      // console.log(prevPoint);
-      // if (prevPoint && Math.abs(data.p - prevPoint) < 0.2) return;
-      const newPoint = {
-        time: data.E,
-        value: +data.p
-      };
-
-      setPoint(newPoint);
-
-      return () => {
-        ws.close();
-      };
-    };
-  }, []);
-
-  return point;
 }
 
-
-{/* <HighchartsReact ref={chartComponent} highcharts={Highcharts} options={options} /> */ }
+// {
+//   /* <HighchartsReact ref={chartComponent} highcharts={Highcharts} options={options} /> */
+// }
 
 // function useInitiChart({ data }) {
 //   const chart = React.useRef(null)
@@ -251,7 +237,6 @@ function useWS() {
 //   }, [data]);
 // }
 
-
 // function useWS() {
 //   const [point, setPoint] = React.useState();
 //   const [price, setPrice] = React.useState<null | string>(null);
@@ -278,10 +263,8 @@ function useWS() {
 //         // selected: true
 //       }
 
-
 //       setPrice(+data.p as any);
 //       setPoint(newPoint as any);
-
 
 //       return () => {
 //         ws.close();
@@ -304,8 +287,6 @@ function usePrevious(value) {
   // Return previous value (happens before update in useEffect above)
   return ref.current;
 }
-
-
 
 // Highcharts.getJSON(
 //   'https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/usdeur.json',
