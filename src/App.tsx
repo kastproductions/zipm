@@ -66,25 +66,25 @@ export default function App() {
 
     >
       <Stack height='full' maxW='8xl' mx='auto' width='full' p={4}>
-        <Stack isInline fontSize='3xl' pb={4}>
+        <Stack isInline fontSize={["xl", '3xl']} pb={[1, 4]} alignItems='center'>
           <Stack flex={1}>
             <Text m={0} fontWeight='black'>BTC-USDT</Text>
           </Stack>
           <Stack flex={1}>
-            <Text textAlign='center' m={0} fontWeight='medium' color={prevPoint?.value > point?.value ? 'red.600' : 'green.600'}>{point?.value?.toFixed(2) || ''}</Text>
+            <Text textAlign={["right", 'center']} m={0} fontWeight='medium' color={prevPoint?.value > point?.value ? 'red.600' : 'green.600'}>{point?.value?.toFixed(2) || ''}</Text>
           </Stack>
-          <Stack flex={1}>
+          <Stack flex={1} display={['none', 'flex']}>
           </Stack>
         </Stack>
-        <Stack flex={1} isInline>
-          <Stack flex={1} width='full' height='full' ref={chartContainerRef} pr={6} bg='transparent'>
+        <Stack flex={1} direction={['column', 'row']}>
+          <Stack flex={1} width='full' height='full' ref={chartContainerRef} pr={[0, 6]} bg='transparent'>
             <PriceChart containerSize={containerSize} point={point} />
           </Stack>
-          <Stack minW='sm' >
-            <Stack rounded='sm' p={10} boxShadow='base' spacing={5}
+          <Stack minW={['full', 'sm']}>
+            <Stack rounded='sm' p={[4, 10]} boxShadow='base' spacing={5}
               bg='white'
             >
-              <Text fontSize='sm' fontWeight='medium'>
+              <Text fontSize='sm' fontWeight='medium' >
                 BTC 1 min binary options
               </Text>
               <FormControl id="bid" display='flex' alignItems='center'>
@@ -114,7 +114,7 @@ export default function App() {
                 </Box>
               </Stack>
 
-              <Stack isInline spacing={8} pt={4}>
+              <Stack isInline spacing={8} pt={[1, 4]}>
                 <Button size='lg' width='full' rounded='sm' fontSize='lg' bg='green.600' boxShadow='lg' color='white' _hover={{
                   bg: 'green.500',
                   shadow: 'base',
@@ -128,11 +128,11 @@ export default function App() {
             {/* <Box flex={1} /> */}
           </Stack>
         </Stack>
-        <Box pl={2} pt={4}>
+        <Box pl={2} pt={4} display={['none', 'block']}>
           <Button fontSize='xl' fontWeight='black'>History</Button>
         </Box>
-        <Stack rounded='sm' height={64} p={6} boxShadow='base' bg='white'>
-          <Stack isInline width='full' borderBottomWidth='1px' borderColor='gray.700'>
+        <Stack display={['none', 'flex']} rounded='sm' height={64} p={6} boxShadow='base' bg='white' overflowX='auto' >
+          <Stack isInline width='full' borderBottomWidth='1px' borderColor='gray.700' >
             {["Timestamp", 'Address', 'Type', "Size", 'Strike Px', 'Settlement Px', "Status"].map((item) => {
               return (
                 <Box key={item} flex={1}>
@@ -143,7 +143,7 @@ export default function App() {
               )
             })}
           </Stack>
-          <Stack overflowY='scroll' >
+          <Stack overflowY='scroll' overflowX='auto' display={['none', 'flex']} >
             {history.map(item => {
               return (
                 <Stack isInline width='full' fontSize='sm'>

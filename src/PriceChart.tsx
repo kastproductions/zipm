@@ -18,7 +18,7 @@ function useInitialChart({ containerSize, point }) {
   React.useEffect(() => {
     if (!containerSize) return
     var width = containerSize.width;
-    var height = containerSize.height;
+    var height = containerSize.height || 320;
     // if (chartRef?.current) return
     // @ts-ignore
     chartRef.current = createChart(document.getElementById("container"), {
