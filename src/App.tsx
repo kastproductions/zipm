@@ -59,7 +59,9 @@ export default function App() {
   // rgb(32,189,202)
   // linear-gradient(to right, rgb(32,189,202), rgb(21,43,67))
   return (
-    <Stack height={["full", "100vh"]}
+    <Stack
+      height={["full", "100vh"]}
+      minH={['100vh']}
       bg='gray.100'
       fontFamily='Roboto'
     // bgImage='linear-gradient(to bottom,rgb(32,189,202,0.5), rgb(21,43,67,0.5))'
