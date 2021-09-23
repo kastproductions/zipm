@@ -70,7 +70,7 @@ export default function App() {
                   fontWeight="medium"
                   color={prevPrice?.value > snap.currentPrice?.value ? "red.600" : "green.600"}
                 >
-                  {snap.currentPrice?.value || ""}
+                  {snap.currentPrice?.value?.toFixed(3) || ""}
                 </Text>
               </Box>
             </Stack>
@@ -92,7 +92,7 @@ export default function App() {
                   </Text>
                 </Box>
               </Stack>
-              <Stack rounded="sm" p={[0, 6]} boxShadow="base" bg="white" spacing={5}>
+              <Stack rounded="sm" p={[4, 6]} boxShadow="base" bg="white" spacing={5}>
                 <Text fontSize="sm" fontWeight="medium">
                   BTC 1 min binary options
                 </Text>

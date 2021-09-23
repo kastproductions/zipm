@@ -53,11 +53,11 @@ const state = proxy({
       color,
       // lineWidth: 2,
       // lineStyle: LightweightCharts.LineStyle.Dotted,
-      axisLabelVisible: true,
+      // axisLabelVisible: true,
     });
     setTimeout(() => {
       s.removePriceLine(priceLine);
-    }, 65 * 1000);
+    }, 63 * 1000);
   },
   updateSeries: (point) => {
     if (!point?.time || !point?.value || !s) return;
@@ -78,6 +78,7 @@ const state = proxy({
 });
 
 const defaultSettings = {
+  marginRight: 20,
   rightPriceScale: {
     visible: false,
   },
@@ -138,7 +139,7 @@ function useWS() {
       if (!data?.E || !data?.p) return;
       const newPoint = {
         time: data.E,
-        value: +data.p,
+        value: parseFloat(data.p),
       };
       setPoint(newPoint);
 
@@ -179,7 +180,7 @@ export function useChartInitializer({ containerSize }) {
     });
 
     chartRef.current.timeScale().setVisibleLogicalRange({
-      from: -1000,
+      from: -3000,
       to: 0,
     });
 
