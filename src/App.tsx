@@ -61,6 +61,7 @@ export default function App() {
   return (
     <Stack height={["full", "100vh"]}
       bg='gray.100'
+      fontFamily='Roboto'
     // bgImage='linear-gradient(to bottom,rgb(32,189,202,0.5), rgb(21,43,67,0.5))'
 
     >
@@ -76,7 +77,7 @@ export default function App() {
           </Stack>
         </Stack>
         <Stack flex={1} isInline>
-          <Stack flex={1} width='full' height='full' ref={chartContainerRef} pr={10} bg='transparent'>
+          <Stack flex={1} width='full' height='full' ref={chartContainerRef} pr={6} bg='transparent'>
             <PriceChart containerSize={containerSize} point={point} />
           </Stack>
           <Stack minW='sm' >
@@ -127,6 +128,9 @@ export default function App() {
             {/* <Box flex={1} /> */}
           </Stack>
         </Stack>
+        <Box pl={2} pt={4}>
+          <Button fontSize='xl' fontWeight='black'>History</Button>
+        </Box>
         <Stack rounded='sm' height={64} p={6} boxShadow='base' bg='white'>
           <Stack isInline width='full' borderBottomWidth='1px' borderColor='gray.700'>
             {["Timestamp", 'Address', 'Type', "Size", 'Strike Px', 'Settlement Px', "Status"].map((item) => {
