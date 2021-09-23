@@ -12,8 +12,9 @@ import {
   NumberIncrementStepper,
   NumberDecrementStepper
 } from "@chakra-ui/react";
-// import { history } from '../mockData'
 import { PriceChart } from "./PriceChart";
+import { history } from "./mock-data";
+import { proxy, useSnapshot } from 'valtio'
 
 declare global {
   interface Window {
@@ -21,9 +22,26 @@ declare global {
   }
 }
 
+
+const state = proxy({
+  bid: 1,
+  total: 1.005,
+  setBid: (bid) => {
+    state.bid = +bid
+    state.total = +(state.bid + 0.005).toFixed(3)
+  },
+})
+
+function useState() {
+  return useSnapshot(state)
+}
+
 export default function App() {
   const chartContainerRef = React.useRef()
   const [containerSize, setSize] = React.useState(null)
+  const point = useWS();
+  const prevPoint = usePrevious(point)
+  const snap = useState()
 
   React.useEffect(() => {
     const size = {
@@ -36,49 +54,66 @@ export default function App() {
     setSize(size)
   }, [])
   // bg='linear-gradient(0deg, rgba(19, 68, 193, 0.4) 0%, rgba(0, 120, 255, 0.0)100%)'
+  // bg='linear-gradient(0deg, rgba(19, 68, 193, 0.4) 0%, rgba(0, 120, 255, 0.0)100%)'
 
+  // rgb(32,189,202)
+  // linear-gradient(to right, rgb(32,189,202), rgb(21,43,67))
   return (
     <Stack height={["full", "100vh"]}
-      bg='linear-gradient(0deg, rgba(19, 68, 193, 0.4) 0%, rgba(0, 120, 255, 0.0)100%)'
+      bg='gray.100'
+    // bgImage='linear-gradient(to bottom,rgb(32,189,202,0.5), rgb(21,43,67,0.5))'
 
     >
       <Stack height='full' maxW='8xl' mx='auto' width='full' p={4}>
-        <Stack isInline fontSize='3xl' px={6}>
+        <Stack isInline fontSize='3xl' pb={4}>
           <Stack flex={1}>
-            <Text m={0}>BTC-USDT</Text>
+            <Text m={0} fontWeight='black'>BTC-USDT</Text>
           </Stack>
           <Stack flex={1}>
-            <Text textAlign='center' m={0}>10047.66</Text>
+            <Text textAlign='center' m={0} fontWeight='medium' color={prevPoint?.value > point?.value ? 'red.600' : 'green.600'}>{point?.value?.toFixed(2) || ''}</Text>
           </Stack>
           <Stack flex={1}>
           </Stack>
         </Stack>
         <Stack flex={1} isInline>
-          <Stack flex={1} width='full' height='full' ref={chartContainerRef} pr={12} bg='transparent'>
-            <PriceChart containerSize={containerSize} />
+          <Stack flex={1} width='full' height='full' ref={chartContainerRef} pr={10} bg='transparent'>
+            <PriceChart containerSize={containerSize} point={point} />
           </Stack>
           <Stack minW='sm' >
-            <Stack rounded='md' p={10} boxShadow='base'>
-              <Text fontSize='sm'>
-                TC 1 min binary options
+            <Stack rounded='sm' p={10} boxShadow='base' spacing={5}
+              bg='white'
+            >
+              <Text fontSize='sm' fontWeight='medium'>
+                BTC 1 min binary options
               </Text>
               <FormControl id="bid" display='flex' alignItems='center'>
-                <FormLabel mb={0} width={40} fontSize='md' fontWeight='semibold'>Order Size</FormLabel>
-                <NumberInput min={1} width='full' defaultValue={1} borderColor='gray.700'>
-                  <NumberInputField rounded='sm' />
+                <FormLabel mb={0} width={48} fontSize='base' fontWeight='semibold'>Order Size</FormLabel>
+                <NumberInput min={1} defaultValue={snap.bid} onChange={snap.setBid} borderColor='gray.700' width={32}>
+                  <NumberInputField rounded='sm' _hover={{}} />
                   <NumberInputStepper>
                     <NumberIncrementStepper />
                     <NumberDecrementStepper />
                   </NumberInputStepper>
                 </NumberInput>
               </FormControl>
-              <Box>
-                <Text fontSize='md' fontWeight='semibold'>Fee</Text>
-              </Box>
-              <Box>
-                <Text fontSize='md' fontWeight='semibold'>Total</Text>
-              </Box>
-              <Stack isInline spacing={8}>
+              <Stack fontSize='md' fontWeight='semibold' isInline justifyContent='space-between' alignItems='center'>
+                <Box>
+                  <Text m={0}>Fee</Text>
+                </Box>
+                <Box>
+                  <Text m={0}>0.005</Text>
+                </Box>
+              </Stack>
+              <Stack fontSize='md' fontWeight='semibold' isInline justifyContent='space-between' alignItems='center'>
+                <Box>
+                  <Text m={0}>Total</Text>
+                </Box>
+                <Box>
+                  <Text m={0}>{snap.total}</Text>
+                </Box>
+              </Stack>
+
+              <Stack isInline spacing={8} pt={4}>
                 <Button size='lg' width='full' rounded='sm' fontSize='lg' bg='green.600' boxShadow='lg' color='white' _hover={{
                   bg: 'green.500',
                   shadow: 'base',
@@ -92,7 +127,7 @@ export default function App() {
             {/* <Box flex={1} /> */}
           </Stack>
         </Stack>
-        <Stack rounded='md' height={64} p={6} boxShadow='base'>
+        <Stack rounded='sm' height={64} p={6} boxShadow='base' bg='white'>
           <Stack isInline width='full' borderBottomWidth='1px' borderColor='gray.700'>
             {["Timestamp", 'Address', 'Type', "Size", 'Strike Px', 'Settlement Px', "Status"].map((item) => {
               return (
@@ -105,7 +140,7 @@ export default function App() {
             })}
           </Stack>
           <Stack overflowY='scroll' >
-            {[].map(item => {
+            {history.map(item => {
               return (
                 <Stack isInline width='full' fontSize='sm'>
                   <Box flex={1}>
@@ -139,7 +174,41 @@ export default function App() {
   );
 };
 
+function useWS() {
+  const [point, setPoint] = React.useState(null);
+  // const prevPoint = usePrevious(point);
 
+  React.useEffect(() => {
+    const ws = new WebSocket("wss://stream.binance.com:9443/ws");
+    const msg = {
+      method: "SUBSCRIBE",
+      params: ["btcusdt@trade"],
+      id: 1
+    };
+    ws.onopen = () => {
+      ws.send(JSON.stringify(msg));
+    };
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      // console.log({ data });
+      if (!data?.E || !data?.p) return;
+      // console.log(prevPoint);
+      // if (prevPoint && Math.abs(data.p - prevPoint) < 0.2) return;
+      const newPoint = {
+        time: data.E,
+        value: +data.p
+      };
+
+      setPoint(newPoint);
+
+      return () => {
+        ws.close();
+      };
+    };
+  }, []);
+
+  return point;
+}
 
 
 {/* <HighchartsReact ref={chartComponent} highcharts={Highcharts} options={options} /> */ }
@@ -171,52 +240,53 @@ export default function App() {
 // }
 
 
-function useWS() {
-  const [point, setPoint] = React.useState();
-  const [price, setPrice] = React.useState<null | string>(null);
-  const prevPoint = usePrevious(point);
+// function useWS() {
+//   const [point, setPoint] = React.useState();
+//   const [price, setPrice] = React.useState<null | string>(null);
+//   const prevPoint = usePrevious(point);
 
-  React.useEffect(() => {
-    const ws = new WebSocket("wss://stream.binance.com:9443/ws");
-    const msg = {
-      method: "SUBSCRIBE",
-      params: ["btcusdt@trade"],
-      id: 1,
-    };
-    ws.onopen = () => {
-      ws.send(JSON.stringify(msg));
-    };
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (!data?.E || !data?.p) return
-      const newPoint = {
-        x: data.E,
-        y: +data.p,
-        // name: "Point2",
-        // color: "#00FF00"
-        // selected: true
-      }
-
-
-      setPrice(+data.p as any);
-      setPoint(newPoint as any);
+//   React.useEffect(() => {
+//     const ws = new WebSocket("wss://stream.binance.com:9443/ws");
+//     const msg = {
+//       method: "SUBSCRIBE",
+//       params: ["btcusdt@trade"],
+//       id: 1,
+//     };
+//     ws.onopen = () => {
+//       ws.send(JSON.stringify(msg));
+//     };
+//     ws.onmessage = (event) => {
+//       const data = JSON.parse(event.data);
+//       if (!data?.E || !data?.p) return
+//       const newPoint = {
+//         x: data.E,
+//         y: +data.p,
+//         // name: "Point2",
+//         // color: "#00FF00"
+//         // selected: true
+//       }
 
 
-      return () => {
-        ws.close();
-      }
-    }
-  }, []);
+//       setPrice(+data.p as any);
+//       setPoint(newPoint as any);
 
-  return { point, price };
-}
+
+//       return () => {
+//         ws.close();
+//       }
+//     }
+//   }, []);
+
+//   return { point, price };
+// }
 
 function usePrevious(value) {
   // The ref object is a generic container whose current property is mutable ...
   // ... and can hold any value, similar to an instance property on a class
-  const ref = useRef();
+  const ref = React.useRef();
   // Store current value in ref
   React.useEffect(() => {
+    // console.log({ value })
     ref.current = value;
   }, [value]); // Only re-run if value changes
   // Return previous value (happens before update in useEffect above)
