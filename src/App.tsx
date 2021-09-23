@@ -79,12 +79,14 @@ export default function App() {
           </Stack>
         </Stack>
         <Stack flex={1} direction={['column', 'row']}>
-          <Stack flex={1} width='full' height='full' ref={chartContainerRef} pr={[0, 6]} bg='transparent'>
+          <Stack flex={1} width='full' height='full' ref={chartContainerRef} pr={[0]} bg='transparent'>
             <PriceChart containerSize={containerSize} point={point} />
           </Stack>
           <Stack minW={['full', 'sm']}>
-            <Stack rounded='sm' p={[4, 10]} boxShadow='base' spacing={5}
-              bg='white'
+            <Stack rounded='sm' p={[0, 6]}
+              // boxShadow='base' 
+              // bg='white'
+              spacing={5}
             >
               <Text fontSize='sm' fontWeight='medium' >
                 BTC 1 min binary options
@@ -130,10 +132,14 @@ export default function App() {
             {/* <Box flex={1} /> */}
           </Stack>
         </Stack>
-        <Box pl={2} pt={4} display={['none', 'block']}>
+        {/* <Box pt={4} display={['none', 'block']}>
           <Button fontSize='xl' fontWeight='black'>History</Button>
-        </Box>
-        <Stack display={['none', 'flex']} rounded='sm' height={64} p={6} boxShadow='base' bg='white' overflowX='auto' >
+        </Box> */}
+        <Stack display={['none', 'flex']} rounded='sm' height={64} pt={6}
+
+          // boxShadow='base' bg='white' 
+
+          overflowX='auto' >
           <Stack isInline width='full' borderBottomWidth='1px' borderColor='gray.700' >
             {["Timestamp", 'Address', 'Type', "Size", 'Strike Px', 'Settlement Px', "Status"].map((item) => {
               return (
