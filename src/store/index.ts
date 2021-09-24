@@ -13,6 +13,9 @@ const state = proxy({
   loss: 0,
   bid: 1,
   total: 1,
+  winAmount: 0,
+  lossAmount: 0,
+  winLossRatio: 0,
   prevMarkers: [],
   history: [],
   setChartRefs: ({ seriesRef, chartRef }) => {
@@ -21,32 +24,25 @@ const state = proxy({
   },
   setBid: (bid) => {
     state.bid = +bid;
-    state.total = +state.bid.toFixed(2);
+    state.total = state.bid + 0;
   },
   addMarker: (betType) => {
-    const start = Date.now();
-    const end = start + 10 * 1000;
-    const color = betType === "up" ? "green" : "red";
+    const start = state.currentPrice.time;
+    const end = start + 60 * 1000;
+    const color = betType === "call" ? "green" : "red";
+    const shape = betType === "call" ? "arrowUp" : "arrowDown";
+
     state.prevMarkers = [
       ...state.prevMarkers,
       {
         time: start,
         position: "inBar",
         color,
-        shape: "circle",
         id: nanoid(),
         size: 1,
-      },
-      {
-        time: end,
-        position: "inBar",
-        color,
-        shape: "circle",
-        id: nanoid(),
-        size: 1,
+        shape,
       },
     ];
-
     s.setMarkers(state.prevMarkers);
 
     const priceLine = s.createPriceLine({
@@ -55,41 +51,60 @@ const state = proxy({
     });
 
     const newEntry = {
-      id: nanoid(),
+      id: start,
       timestamp: start,
       type: betType,
       size: state.bid,
       strikePrice: state.currentPrice.value,
       settlementPrice: "pending",
       status: "pending",
+      secondsLeft: 60,
     };
 
     state.history = [newEntry, ...state.history];
 
+    const intervalId = setInterval(() => {
+      const historyCopy = [...state.history];
+      const objIndex = state.history.findIndex((obj) => obj.id === newEntry.id);
+      historyCopy[objIndex].secondsLeft -= 1;
+      // state.history = historyCopy;
+    }, 1000);
+
+    const currentBid = state.bid;
+
     setTimeout(() => {
+      clearInterval(intervalId);
       s.removePriceLine(priceLine);
       const historyCopy = [...state.history];
       const objIndex = state.history.findIndex((obj) => obj.id === newEntry.id);
       const prevHistoryItem = historyCopy[objIndex];
+
       prevHistoryItem.settlementPrice = state.currentPrice.value;
       prevHistoryItem.status = (() => {
-        if (newEntry.type === "up") {
-          if (prevHistoryItem.settlementPrice > prevHistoryItem.strikePrice) {
-            return "Win";
-          } else {
-            return "Loss";
-          }
+        if (newEntry.type === "call") {
+          return prevHistoryItem.settlementPrice > prevHistoryItem.strikePrice ? "Win" : "Loss";
         }
-        if (newEntry.type === "down") {
-          if (prevHistoryItem.settlementPrice < prevHistoryItem.strikePrice) {
-            return "Win";
-          } else {
-            return "Loss";
-          }
+        if (newEntry.type === "put") {
+          return prevHistoryItem.settlementPrice < prevHistoryItem.strikePrice ? "Win" : "Loss";
         }
       })();
+
+      if (prevHistoryItem.status === "Win") {
+        const profit = calcProfit({
+          startPrice: prevHistoryItem.settlementPrice,
+          endPrice: prevHistoryItem.strikePrice,
+          bid: currentBid,
+        });
+        state.balance += profit;
+        state.winAmount += profit;
+        state.winLossRatio = state.winAmount / (state.winAmount + state.lossAmount);
+      } else {
+        state.balance -= currentBid;
+        state.lossAmount += currentBid;
+        state.winLossRatio = state.winAmount / (state.winAmount + state.lossAmount);
+      }
       state.history = historyCopy;
-    }, 10 * 1000);
+    }, 60 * 1000);
   },
   updateSeries: (point) => {
     if (!point?.time || !point?.value || !s) return;
@@ -102,12 +117,33 @@ const state = proxy({
         position: "inBar",
         color: "rgba(33, 150, 243, 1)",
         shape: "circle",
-        id: nanoid(),
+        id: point.time,
         size: 1,
       },
     ]);
   },
+  // addSomeTime() {
+  // const data = getFuturePointsInMiliseconds({ ms: 60 * 1000 });
+  // s.setData(data);
+  // },
 });
+
+function calcProfit({ startPrice, endPrice, bid }) {
+  const premium = 1;
+  const result = Math.min(5 * premium, Math.abs(endPrice - startPrice)) * bid;
+  return result;
+}
+
+// function getFuturePointsInMiliseconds({ ms }: { ms: number }) {
+//   let now = Date.now() + 2000;
+//   const length = Math.floor(ms / 100);
+//   return Array(length)
+//     .fill(null)
+//     .map((_) => {
+//       now += 100;
+//       return { time: now, value: 0 };
+//     });
+// }
 
 const defaultSettings = {
   marginRight: 20,
@@ -125,6 +161,7 @@ const defaultSettings = {
   },
   timeScale: {
     visible: false,
+    rightOffset: 12,
   },
   layout: {
     backgroundColor: "transparent",
@@ -169,8 +206,9 @@ function useWS() {
       const data = JSON.parse(event.data);
       // console.log({ data });
       if (!data?.E || !data?.p) return;
+
       const newPoint = {
-        time: data.E,
+        time: (data.E + 50) / 100,
         value: parseFloat(data.p),
       };
       setPoint(newPoint);
@@ -193,7 +231,6 @@ export function useChartInitializer({ containerSize }) {
   const seriesRef = React.useRef();
 
   React.useLayoutEffect(() => {
-    // if (snap.chartRef) return;
     if (!containerSize?.width) return;
     const width = containerSize.width;
     const height = containerSize.height || 250;
@@ -209,6 +246,7 @@ export function useChartInitializer({ containerSize }) {
       bottomColor: "rgba(33, 150, 243, 0.0)",
       lineColor: "rgba(33, 150, 243, 1)",
       lineWidth: 1,
+      lastPriceAnimation: 1,
     });
 
     chartRef.current.timeScale().setVisibleLogicalRange({

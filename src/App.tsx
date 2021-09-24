@@ -17,6 +17,8 @@ import {
   NumberIncrementStepper,
   NumberDecrementStepper,
   Badge,
+  Progress,
+  Spinner,
 } from "@chakra-ui/react";
 import { PriceChart } from "./PriceChart";
 import { history } from "./mock-data";
@@ -53,11 +55,11 @@ export default function App() {
     <Stack
       height={["full", "100vh"]}
       minH={["100vh"]}
-      bg="gray.100"
+      bg="gray.200"
       fontFamily="Roboto"
       // bgImage="linear-gradient(to bottom, rgb(32,189,202, 0), rgb(32,189,202, 0.))"
     >
-      <Stack height="full" maxW="8xl" mx="auto" width="full" p={4}>
+      <Stack height="full" maxW="8xl" mx="auto" width="full" p={[0, 4]}>
         <Stack flex={1} direction={["column", "row"]} spacing={[4, 10]}>
           <Stack flex={1} width="full" height="full">
             <Stack isInline fontSize={["xl", "3xl"]} pb={[1, 4]} alignItems="center" justifyContent="space-between">
@@ -86,16 +88,24 @@ export default function App() {
               <Stack spacing={0} pb={4}>
                 <Box>
                   <Text fontSize="3xl" fontWeight="medium">
-                    Balance: ${snap.balance}
+                    Balance: ${snap.balance.toFixed(2)}
                   </Text>
                 </Box>
                 <Box>
                   <Text fontSize="sm" fontWeight="medium">
-                    Profit / Loss: {snap.profit / snap.loss || 0}
+                    Profit / Loss: {Math.round(snap.winLossRatio * 100)} %
                   </Text>
                 </Box>
               </Stack>
-              <Stack rounded="sm" p={[4, 6]} boxShadow="base" bg="white" spacing={5}>
+              <Stack
+                p={[4, 6]}
+                boxShadow="base"
+                bg="white"
+                spacing={5}
+                // roundedTopLeft="3xl"
+                // roundedTopRight="3xl"
+                rounded="3xl"
+              >
                 <Text fontSize="sm" fontWeight="medium">
                   BTC 1 min binary options
                 </Text>
@@ -103,8 +113,16 @@ export default function App() {
                   <FormLabel mb={0} width={48} fontSize="base" fontWeight="semibold">
                     Order Size
                   </FormLabel>
-                  <NumberInput min={1} defaultValue={snap.bid} onChange={snap.setBid} borderColor="gray.700" width={32}>
-                    <NumberInputField rounded="sm" _hover={{}} />
+                  <NumberInput
+                    defaultValue={snap.bid}
+                    onChange={snap.setBid}
+                    min={1}
+                    precision={0}
+                    step={1}
+                    borderColor="gray.700"
+                    width={32}
+                  >
+                    <NumberInputField rounded="md" _hover={{}} />
                     <NumberInputStepper>
                       <NumberIncrementStepper />
                       <NumberDecrementStepper />
@@ -116,7 +134,7 @@ export default function App() {
                     <Text m={0}>Fee</Text>
                   </Box>
                   <Box>
-                    <Text m={0}>$0.00</Text>
+                    <Text m={0}>$0</Text>
                   </Box>
                 </Stack>
                 <Stack fontSize="md" fontWeight="semibold" isInline justifyContent="space-between" alignItems="center">
@@ -131,48 +149,51 @@ export default function App() {
 
               <Stack isInline spacing={8} pt={[1, 4]}>
                 <Button
-                  onClick={() => snap.addMarker("up")}
+                  onClick={() => snap.addMarker("call")}
                   size="lg"
                   width="full"
-                  rounded="sm"
+                  rounded="3xl"
                   fontSize="lg"
                   bg="green.300"
                   color="green.900"
-                  boxShadow="md"
+                  boxShadow="base"
+                  _active={{}}
                   _hover={{
                     bg: "green.200",
+                    color: "green.800",
                     boxShadow: "base",
                   }}
                 >
-                  Up &#8599;
+                  Call &#8599;
                 </Button>
                 <Button
-                  onClick={() => snap.addMarker("down")}
+                  onClick={() => snap.addMarker("put")}
                   size="lg"
                   width="full"
-                  rounded="sm"
+                  rounded="3xl"
                   fontSize="lg"
                   bg="red.300"
                   color="red.900"
-                  boxShadow="md"
+                  boxShadow="base"
+                  _active={{}}
                   _hover={{
                     bg: "red.200",
+                    color: "red.800",
                     boxShadow: "base",
                   }}
                 >
-                  Down &#8600;
+                  Put &#8600;
                 </Button>
               </Stack>
             </Stack>
-            {/* <Box flex={1} /> */}
           </Stack>
         </Stack>
-        <Box pt={4} display={["none", "block"]}>
-          <Button fontSize="xl" fontWeight="black">
+        <Box pt={8} display={["none", "block"]}>
+          <Button fontSize="xl" fontWeight="black" bg="gray.200" _hover={{}}>
             History
           </Button>
         </Box>
-        <Stack display={["none", "flex"]} rounded="sm" height={64} px={6} boxShadow="base" bg="white" overflowX="auto">
+        <Stack display={["none", "flex"]} rounded="3xl" height={64} px={6} boxShadow="base" bg="white" overflowX="auto">
           <Stack isInline width="full" borderBottomWidth="1px" borderColor="gray.700" py={3}>
             {["Timestamp", "Type", "Size", "Strike Price", "Settlement Price", "Status"].map((item) => (
               <Box key={item} flex={1}>
@@ -182,31 +203,39 @@ export default function App() {
               </Box>
             ))}
           </Stack>
-          <Stack overflowY="scroll" overflowX="auto" display={["none", "flex"]} textAlign="center">
+          <Stack overflowY="scroll" pb={2} display={["none", "flex"]} textAlign="center">
             {snap.history.map((item) => (
-              <Stack key={item.id} isInline width="full" fontSize="sm">
-                <Box flex={1}>
-                  <Text m={0}>{format(item.timestamp, "kk:mm:ss")}</Text>
-                </Box>
-                <Box flex={1}>
-                  <Badge width={16} py={1} colorScheme={item.type === "up" ? "green" : "red"}>
+              <Stack key={item.id} isInline width="full" fontSize="sm" alignItems="center">
+                <Stack flex={1} isInline justifyContent="center" alignItems="center">
+                  <Text m={0}>{format(item.timestamp, "dd-MM-yyyy kk:mm")}</Text>
+                </Stack>
+                <Stack flex={1} isInline justifyContent="center" alignItems="center">
+                  <Badge width={20} py={0} colorScheme={item.type === "call" ? "green" : "red"}>
                     {item.type}
                   </Badge>
-                </Box>
-                <Box flex={1}>
+                </Stack>
+                <Stack flex={1} isInline justifyContent="center" alignItems="center">
                   <Text m={0}>${item.size.toFixed(2)}</Text>
-                </Box>
-                <Box flex={1}>
+                </Stack>
+                <Stack flex={1} isInline justifyContent="center" alignItems="center">
                   <Text m={0}>${item.strikePrice.toFixed(3)}</Text>
-                </Box>
-                <Box flex={1}>
-                  <Text m={0}>{item.settlementPrice === "pending" ? "..." : `$${item.settlementPrice.toFixed(3)}`}</Text>
-                </Box>
-                <Box flex={1}>
-                  <Badge width={16} py={1} colorScheme={item.status === "pending" ? "" : item.status === "Win" ? "green" : "red"}>
-                    {item.status === "pending" ? item.status : item.status}
-                  </Badge>
-                </Box>
+                </Stack>
+                <Stack flex={1} isInline justifyContent="center" alignItems="center">
+                  <Text m={0}>
+                    {item.settlementPrice === "pending" ? <Spinner size="xs" thickness="1px" /> : `$${item.settlementPrice.toFixed(3)}`}
+                  </Text>
+                </Stack>
+                <Stack flex={1} isInline justifyContent="center" alignItems="center">
+                  {item.status === "pending" ? (
+                    <Box width={20}>
+                      <Progress hasStripe value={(item.secondsLeft * 100) / 60} colorScheme="gray" />
+                    </Box>
+                  ) : (
+                    <Badge width={20} py={0} colorScheme={item.status === "Win" ? "green" : "red"}>
+                      {item.status}
+                    </Badge>
+                  )}
+                </Stack>
               </Stack>
             ))}
           </Stack>
