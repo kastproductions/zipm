@@ -1,9 +1,7 @@
 import { proxy, useSnapshot } from "valtio";
 import { createChart } from "lightweight-charts";
 import React from "react";
-
-// const width = 500;
-// const height = 500;
+import { nanoid } from "nanoid";
 
 let c;
 let s;
@@ -16,6 +14,7 @@ const state = proxy({
   bid: 1,
   total: 1,
   prevMarkers: [],
+  history: [],
   setChartRefs: ({ seriesRef, chartRef }) => {
     s = seriesRef;
     c = chartRef;
@@ -26,7 +25,7 @@ const state = proxy({
   },
   addMarker: (betType) => {
     const start = Date.now();
-    const end = start + 60 * 1000;
+    const end = start + 10 * 1000;
     const color = betType === "up" ? "green" : "red";
     state.prevMarkers = [
       ...state.prevMarkers,
@@ -35,7 +34,7 @@ const state = proxy({
         position: "inBar",
         color,
         shape: "circle",
-        id: start + "",
+        id: nanoid(),
         size: 1,
       },
       {
@@ -43,21 +42,54 @@ const state = proxy({
         position: "inBar",
         color,
         shape: "circle",
-        id: end + "",
+        id: nanoid(),
         size: 1,
       },
     ];
+
     s.setMarkers(state.prevMarkers);
+
     const priceLine = s.createPriceLine({
       price: state.currentPrice.value,
       color,
-      // lineWidth: 2,
-      // lineStyle: LightweightCharts.LineStyle.Dotted,
-      // axisLabelVisible: true,
     });
+
+    const newEntry = {
+      id: nanoid(),
+      timestamp: start,
+      type: betType,
+      size: state.bid,
+      strikePrice: state.currentPrice.value,
+      settlementPrice: "pending",
+      status: "pending",
+    };
+
+    state.history = [newEntry, ...state.history];
+
     setTimeout(() => {
       s.removePriceLine(priceLine);
-    }, 63 * 1000);
+      const historyCopy = [...state.history];
+      const objIndex = state.history.findIndex((obj) => obj.id === newEntry.id);
+      const prevHistoryItem = historyCopy[objIndex];
+      prevHistoryItem.settlementPrice = state.currentPrice.value;
+      prevHistoryItem.status = (() => {
+        if (newEntry.type === "up") {
+          if (prevHistoryItem.settlementPrice > prevHistoryItem.strikePrice) {
+            return "Win";
+          } else {
+            return "Loss";
+          }
+        }
+        if (newEntry.type === "down") {
+          if (prevHistoryItem.settlementPrice < prevHistoryItem.strikePrice) {
+            return "Win";
+          } else {
+            return "Loss";
+          }
+        }
+      })();
+      state.history = historyCopy;
+    }, 10 * 1000);
   },
   updateSeries: (point) => {
     if (!point?.time || !point?.value || !s) return;
@@ -68,9 +100,9 @@ const state = proxy({
       {
         time: point.time,
         position: "inBar",
-        color: "rgb(21,43,67)",
+        color: "rgba(33, 150, 243, 1)",
         shape: "circle",
-        id: point.time + "",
+        id: nanoid(),
         size: 1,
       },
     ]);
@@ -85,7 +117,7 @@ const defaultSettings = {
   leftPriceScale: {
     visible: true,
     scaleMargins: {
-      top: 0.1,
+      top: 0,
       bottom: 0.1,
     },
     borderVisible: false,
@@ -173,14 +205,14 @@ export function useChartInitializer({ containerSize }) {
     });
 
     seriesRef.current = chartRef.current.addAreaSeries({
-      topColor: "rgb(32,189,202, 0.4)",
-      bottomColor: "rgb(21,43,67, 0.0)",
-      lineColor: "rgb(21,43,67)",
+      topColor: "rgba(33, 150, 243, 0.56)",
+      bottomColor: "rgba(33, 150, 243, 0.0)",
+      lineColor: "rgba(33, 150, 243, 1)",
       lineWidth: 1,
     });
 
     chartRef.current.timeScale().setVisibleLogicalRange({
-      from: -3000,
+      from: -4000,
       to: 0,
     });
 

@@ -16,10 +16,12 @@ import {
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
+  Badge,
 } from "@chakra-ui/react";
 import { PriceChart } from "./PriceChart";
 import { history } from "./mock-data";
 import { useStore } from "./store";
+import { format, formatDistance, formatRelative, subDays } from "date-fns";
 
 declare global {
   interface Window {
@@ -43,19 +45,20 @@ export default function App() {
   }, []);
   // bg='linear-gradient(0deg, rgba(19, 68, 193, 0.4) 0%, rgba(0, 120, 255, 0.0)100%)'
   // bg='linear-gradient(0deg, rgba(19, 68, 193, 0.4) 0%, rgba(0, 120, 255, 0.0)100%)'
+  // bgImage='linear-gradient(to bottom,rgb(32,189,202,0.5), rgb(21,43,67,0.5))'
 
   // rgb(32,189,202)
-  // linear-gradient(to right, rgb(32,189,202), rgb(21,43,67))
+  // linear-gradient(to right, rgb(32,189,202, 1), rgb(21,43,67))
   return (
     <Stack
       height={["full", "100vh"]}
       minH={["100vh"]}
       bg="gray.100"
       fontFamily="Roboto"
-      // bgImage='linear-gradient(to bottom,rgb(32,189,202,0.5), rgb(21,43,67,0.5))'
+      // bgImage="linear-gradient(to bottom, rgb(32,189,202, 0), rgb(32,189,202, 0.))"
     >
       <Stack height="full" maxW="8xl" mx="auto" width="full" p={4}>
-        <Stack flex={1} direction={["column", "row"]} spacing={10}>
+        <Stack flex={1} direction={["column", "row"]} spacing={[4, 10]}>
           <Stack flex={1} width="full" height="full">
             <Stack isInline fontSize={["xl", "3xl"]} pb={[1, 4]} alignItems="center" justifyContent="space-between">
               <Box>
@@ -88,7 +91,7 @@ export default function App() {
                 </Box>
                 <Box>
                   <Text fontSize="sm" fontWeight="medium">
-                    Profit / Loss: ${snap.profit / snap.loss || 0}
+                    Profit / Loss: {snap.profit / snap.loss || 0}
                   </Text>
                 </Box>
               </Stack>
@@ -133,11 +136,11 @@ export default function App() {
                   width="full"
                   rounded="sm"
                   fontSize="lg"
-                  bg="green.600"
-                  boxShadow="xl"
-                  color="white"
+                  bg="green.300"
+                  color="green.900"
+                  boxShadow="md"
                   _hover={{
-                    bg: "green.500",
+                    bg: "green.200",
                     boxShadow: "base",
                   }}
                 >
@@ -149,11 +152,11 @@ export default function App() {
                   width="full"
                   rounded="sm"
                   fontSize="lg"
-                  bg="red.600"
-                  boxShadow="xl"
-                  color="white"
+                  bg="red.300"
+                  color="red.900"
+                  boxShadow="md"
                   _hover={{
-                    bg: "red.500",
+                    bg: "red.200",
                     boxShadow: "base",
                   }}
                 >
@@ -164,9 +167,11 @@ export default function App() {
             {/* <Box flex={1} /> */}
           </Stack>
         </Stack>
-        {/* <Box pt={4} display={['none', 'block']}>
-          <Button fontSize='xl' fontWeight='black'>History</Button>
-        </Box> */}
+        <Box pt={4} display={["none", "block"]}>
+          <Button fontSize="xl" fontWeight="black">
+            History
+          </Button>
+        </Box>
         <Stack display={["none", "flex"]} rounded="sm" height={64} px={6} boxShadow="base" bg="white" overflowX="auto">
           <Stack isInline width="full" borderBottomWidth="1px" borderColor="gray.700" py={3}>
             {["Timestamp", "Type", "Size", "Strike Price", "Settlement Price", "Status"].map((item) => (
@@ -178,25 +183,29 @@ export default function App() {
             ))}
           </Stack>
           <Stack overflowY="scroll" overflowX="auto" display={["none", "flex"]} textAlign="center">
-            {history.map((item) => (
-              <Stack key={item.timestamp} isInline width="full" fontSize="sm">
+            {snap.history.map((item) => (
+              <Stack key={item.id} isInline width="full" fontSize="sm">
                 <Box flex={1}>
-                  <Text m={0}>{item.timestamp}</Text>
+                  <Text m={0}>{format(item.timestamp, "kk:mm:ss")}</Text>
                 </Box>
                 <Box flex={1}>
-                  <Text m={0}>{item.type}</Text>
+                  <Badge width={16} py={1} colorScheme={item.type === "up" ? "green" : "red"}>
+                    {item.type}
+                  </Badge>
                 </Box>
                 <Box flex={1}>
-                  <Text m={0}>{item.size}</Text>
+                  <Text m={0}>${item.size.toFixed(2)}</Text>
                 </Box>
                 <Box flex={1}>
-                  <Text m={0}>{item.strikepx}</Text>
+                  <Text m={0}>${item.strikePrice.toFixed(3)}</Text>
                 </Box>
                 <Box flex={1}>
-                  <Text m={0}>{item.settlementpx}</Text>
+                  <Text m={0}>{item.settlementPrice === "pending" ? "..." : `$${item.settlementPrice.toFixed(3)}`}</Text>
                 </Box>
                 <Box flex={1}>
-                  <Text m={0}>{item.status}</Text>
+                  <Badge width={16} py={1} colorScheme={item.status === "pending" ? "" : item.status === "Win" ? "green" : "red"}>
+                    {item.status === "pending" ? item.status : item.status}
+                  </Badge>
                 </Box>
               </Stack>
             ))}

@@ -12,8 +12,10 @@
     "@chakra-ui/react": "^1.6.8",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
+    "date-fns": "^2.24.0",
     "framer-motion": "^4",
     "lightweight-charts": "^3.6.1",
+    "nanoid": "^3.1.25",
     "react": "^17.0.0",
     "react-dom": "^17.0.0",
     "valtio": "^1.2.3"
