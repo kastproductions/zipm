@@ -29,11 +29,13 @@ import {
   Th,
   Td,
   TableCaption,
+  Icon,
 } from "@chakra-ui/react";
 import { PriceChart } from "./PriceChart";
 import { history } from "./mock-data";
 import { useStore } from "./store";
 import { format, formatDistance, formatRelative, subDays } from "date-fns";
+import { FiTrendingDown, FiTrendingUp } from "react-icons/fi";
 
 declare global {
   interface Window {
@@ -67,6 +69,7 @@ export default function App() {
       minH={["100vh"]}
       bg="gray.200"
       fontFamily="Roboto"
+      pb={2}
       // bgImage="linear-gradient(to bottom, rgb(32,189,202, 0), rgb(32,189,202, 0.))"
     >
       <Stack height="full" maxW="8xl" mx="auto" width="full" p={[0, 4]}>
@@ -179,7 +182,10 @@ export default function App() {
                   }}
                   isDisabled={snap.isBetDisabled}
                 >
-                  Call &#8599;
+                  Call
+                  <Box pl={1}>
+                    <Icon as={FiTrendingUp} />
+                  </Box>
                 </Button>
                 <Button
                   onClick={() => snap.addMarker("put")}
@@ -198,7 +204,10 @@ export default function App() {
                   }}
                   isDisabled={snap.isBetDisabled}
                 >
-                  Put &#8600;
+                  Put
+                  <Box pl={1}>
+                    <Icon as={FiTrendingDown} />
+                  </Box>
                 </Button>
               </Stack>
             </Stack>
@@ -220,7 +229,7 @@ export default function App() {
                     if (item.status === "pending") {
                       return (
                         <Box width={20}>
-                          <Progress hasStripe value={(item.secondsLeft * 100) / 5} colorScheme="gray" />
+                          <Progress hasStripe value={(item.secondsLeft * 100) / 60} colorScheme="gray" />
                         </Box>
                       );
                     } else {
@@ -298,7 +307,7 @@ export default function App() {
                   <Stack flex={1} isInline justifyContent="center" alignItems="center">
                     {item.status === "pending" ? (
                       <Box width={20}>
-                        <Progress hasStripe value={(item.secondsLeft * 100) / 5} colorScheme="gray" />
+                        <Progress hasStripe value={(item.secondsLeft * 100) / 60} colorScheme="gray" />
                       </Box>
                     ) : (
                       <Badge minW={20} py={0} colorScheme={item.status === "Won" ? "green" : "red"}>

@@ -65,7 +65,7 @@ const state = proxy({
       strikePrice: state.currentPrice.value,
       settlementPrice: "pending",
       status: "pending",
-      secondsLeft: 5,
+      secondsLeft: 60,
     };
 
     state.history = [newEntry, ...state.history];
@@ -95,6 +95,7 @@ const state = proxy({
         return clearTimeout(timeoutId);
       } else {
         expected += interval;
+        clearTimeout(timeoutId);
         timeoutId = setTimeout(step, Math.max(0, interval - dt)); // take into account drift
       }
     }, interval);
@@ -137,8 +138,21 @@ const state = proxy({
       if (state.bid > state.balance) {
         state.isBetDisabled = true;
       }
+      const pendingCount = historyCopy.filter((item) => item.status === "pending").length;
+      if (pendingCount >= 6) {
+        state.isBetDisabled = true;
+      } else {
+        state.isBetDisabled = false;
+      }
       state.history = historyCopy;
-    }, 5 * 1000);
+    }, 60 * 1000);
+
+    const pendingCount = state.history.filter((item) => item.status === "pending").length;
+    if (pendingCount >= 6) {
+      state.isBetDisabled = true;
+    } else {
+      state.isBetDisabled = false;
+    }
   },
   updateSeries: (point) => {
     if (!point?.time || !point?.value || !s) return;
