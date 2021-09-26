@@ -16,6 +16,7 @@ const state = proxy({
   winAmount: 0,
   lossAmount: 0,
   winLossRatio: 0,
+  isBetDisabled: false,
   prevMarkers: [],
   history: [],
   setChartRefs: ({ seriesRef, chartRef }) => {
@@ -23,12 +24,18 @@ const state = proxy({
     c = chartRef;
   },
   setBid: (bid) => {
-    state.bid = +bid;
-    state.total = state.bid + 0;
+    if (!+bid || +bid > state.balance) {
+      state.isBetDisabled = true;
+      state.total = 0;
+    } else {
+      state.bid = +bid;
+      state.total = state.bid + 0;
+      state.isBetDisabled = false;
+    }
   },
   addMarker: (betType) => {
     const start = state.currentPrice.time;
-    const end = start + 60 * 1000;
+    // const end = start + 5 * 1000;
     const color = betType === "call" ? "green" : "red";
     const shape = betType === "call" ? "arrowUp" : "arrowDown";
 
@@ -51,29 +58,51 @@ const state = proxy({
     });
 
     const newEntry = {
-      id: start,
+      id: nanoid(),
       timestamp: start,
       type: betType,
       size: state.bid,
       strikePrice: state.currentPrice.value,
       settlementPrice: "pending",
       status: "pending",
-      secondsLeft: 60,
+      secondsLeft: 5,
     };
 
     state.history = [newEntry, ...state.history];
 
-    const intervalId = setInterval(() => {
-      const historyCopy = [...state.history];
+    // let intervalId = setTimeout(function run() {
+    //   // const historyCopy = [...state.history];
+    //   const objIndex = state.history.findIndex((obj) => obj.id === newEntry.id);
+    //   state.history[objIndex].secondsLeft -= 1;
+    //   if (state.history[objIndex].secondsLeft === 0) {
+    //     return clearTimeout(intervalId);
+    //   } else {
+    //     intervalId = setTimeout(run, 1000);
+    //   }
+    // }, 1000);
+
+    const interval = 1000; // ms
+    let expected = Date.now() + interval;
+    let timeoutId = setTimeout(function step() {
+      const dt = Date.now() - expected; // the drift (positive for overshooting)
+      if (dt > interval) {
+        // something really bad happened. Maybe the browser (tab) was inactive?
+        // possibly special handling to avoid futile "catch up" run
+      }
       const objIndex = state.history.findIndex((obj) => obj.id === newEntry.id);
-      historyCopy[objIndex].secondsLeft -= 1;
-      // state.history = historyCopy;
-    }, 1000);
+      state.history[objIndex].secondsLeft -= 1;
+      if (state.history[objIndex].secondsLeft === 0) {
+        return clearTimeout(timeoutId);
+      } else {
+        expected += interval;
+        timeoutId = setTimeout(step, Math.max(0, interval - dt)); // take into account drift
+      }
+    }, interval);
 
     const currentBid = state.bid;
 
     setTimeout(() => {
-      clearInterval(intervalId);
+      clearInterval(timeoutId);
       s.removePriceLine(priceLine);
       const historyCopy = [...state.history];
       const objIndex = state.history.findIndex((obj) => obj.id === newEntry.id);
@@ -82,14 +111,14 @@ const state = proxy({
       prevHistoryItem.settlementPrice = state.currentPrice.value;
       prevHistoryItem.status = (() => {
         if (newEntry.type === "call") {
-          return prevHistoryItem.settlementPrice > prevHistoryItem.strikePrice ? "Win" : "Loss";
+          return prevHistoryItem.settlementPrice > prevHistoryItem.strikePrice ? "Won" : "Loss";
         }
         if (newEntry.type === "put") {
-          return prevHistoryItem.settlementPrice < prevHistoryItem.strikePrice ? "Win" : "Loss";
+          return prevHistoryItem.settlementPrice < prevHistoryItem.strikePrice ? "Won" : "Loss";
         }
       })();
 
-      if (prevHistoryItem.status === "Win") {
+      if (prevHistoryItem.status === "Won") {
         const profit = calcProfit({
           startPrice: prevHistoryItem.settlementPrice,
           endPrice: prevHistoryItem.strikePrice,
@@ -98,13 +127,18 @@ const state = proxy({
         state.balance += profit;
         state.winAmount += profit;
         state.winLossRatio = state.winAmount / (state.winAmount + state.lossAmount);
+        prevHistoryItem.result = profit;
       } else {
         state.balance -= currentBid;
         state.lossAmount += currentBid;
         state.winLossRatio = state.winAmount / (state.winAmount + state.lossAmount);
+        prevHistoryItem.result = currentBid;
+      }
+      if (state.bid > state.balance) {
+        state.isBetDisabled = true;
       }
       state.history = historyCopy;
-    }, 60 * 1000);
+    }, 5 * 1000);
   },
   updateSeries: (point) => {
     if (!point?.time || !point?.value || !s) return;
@@ -117,13 +151,13 @@ const state = proxy({
         position: "inBar",
         color: "rgba(33, 150, 243, 1)",
         shape: "circle",
-        id: point.time,
+        id: nanoid(),
         size: 1,
       },
     ]);
   },
   // addSomeTime() {
-  // const data = getFuturePointsInMiliseconds({ ms: 60 * 1000 });
+  // const data = getFuturePointsInMiliseconds({ ms: 5 * 1000 });
   // s.setData(data);
   // },
 });
@@ -194,21 +228,26 @@ function useWS() {
 
   React.useEffect(() => {
     const ws = new WebSocket("wss://stream.binance.com:9443/ws");
+    // const ws = new WebSocket("wss://ws.bitstamp.net");
     const msg = {
       method: "SUBSCRIBE",
       params: ["btcusdt@trade"],
       id: 1,
     };
+    // const msg = {
+    //   event: "bts:subscribe",
+    //   data: { channel: "btcusd" },
+    // };
     ws.onopen = () => {
       ws.send(JSON.stringify(msg));
     };
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       // console.log({ data });
-      if (!data?.E || !data?.p) return;
+      // if (!data?.E || !data?.p) return;
 
       const newPoint = {
-        time: (data.E + 50) / 100,
+        time: data.E,
         value: parseFloat(data.p),
       };
       setPoint(newPoint);
