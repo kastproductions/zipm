@@ -229,7 +229,7 @@ export default function App() {
                     if (item.status === "pending") {
                       return (
                         <Box width={20}>
-                          <Progress hasStripe value={(item.secondsLeft * 100) / 60} colorScheme="gray" />
+                          <Progress hasStripe value={(item.secondsLeft * 100) / 60} colorScheme="blue" />
                         </Box>
                       );
                     } else {
@@ -307,7 +307,7 @@ export default function App() {
                   <Stack flex={1} isInline justifyContent="center" alignItems="center">
                     {item.status === "pending" ? (
                       <Box width={20}>
-                        <Progress hasStripe value={(item.secondsLeft * 100) / 60} colorScheme="gray" />
+                        <Progress hasStripe value={(item.secondsLeft * 100) / 60} colorScheme="blue" />
                       </Box>
                     ) : (
                       <Badge minW={20} py={0} colorScheme={item.status === "Won" ? "green" : "red"}>
