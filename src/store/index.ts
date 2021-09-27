@@ -127,19 +127,19 @@ const state = proxy({
         });
         state.balance += profit;
         state.winAmount += profit;
-        state.winLossRatio = state.winAmount / (state.winAmount + state.lossAmount);
+        state.winLossRatio += profit;
         prevHistoryItem.result = profit;
       } else {
         state.balance -= currentBid;
         state.lossAmount += currentBid;
-        state.winLossRatio = state.winAmount / (state.winAmount + state.lossAmount);
+        state.winLossRatio -= currentBid;
         prevHistoryItem.result = currentBid;
       }
       if (state.bid > state.balance) {
         state.isBetDisabled = true;
       }
       const pendingCount = historyCopy.filter((item) => item.status === "pending").length;
-      if (pendingCount >= 6) {
+      if (pendingCount >= 10) {
         state.isBetDisabled = true;
       } else {
         state.isBetDisabled = false;
@@ -148,7 +148,7 @@ const state = proxy({
     }, 60 * 1000);
 
     const pendingCount = state.history.filter((item) => item.status === "pending").length;
-    if (pendingCount >= 6) {
+    if (pendingCount >= 10) {
       state.isBetDisabled = true;
     } else {
       state.isBetDisabled = false;

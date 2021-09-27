@@ -106,7 +106,7 @@ export default function App() {
                 </Box>
                 <Box>
                   <Text m={0} fontSize={["xs", "sm"]} fontWeight="medium">
-                    Profit / Loss: ${snap.winAmount.toFixed(2)} / ${snap.lossAmount.toFixed(2)}
+                    Profit / Loss: ${snap.winLossRatio.toFixed(2)}
                   </Text>
                 </Box>
               </Stack>
