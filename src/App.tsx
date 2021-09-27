@@ -36,6 +36,7 @@ import { history } from "./mock-data";
 import { useStore } from "./store";
 import { format, formatDistance, formatRelative, subDays } from "date-fns";
 import { FiTrendingDown, FiTrendingUp } from "react-icons/fi";
+import debounce from "lodash.debounce";
 
 declare global {
   interface Window {
@@ -54,15 +55,17 @@ export default function App() {
       width: chartContainerRef.current.offsetWidth,
       height: chartContainerRef.current.offsetHeight,
     };
-    // console.log(size);
     setSize(size);
   }, []);
-  // bg='linear-gradient(0deg, rgba(19, 68, 193, 0.4) 0%, rgba(0, 120, 255, 0.0)100%)'
-  // bg='linear-gradient(0deg, rgba(19, 68, 193, 0.4) 0%, rgba(0, 120, 255, 0.0)100%)'
-  // bgImage='linear-gradient(to bottom,rgb(32,189,202,0.5), rgb(21,43,67,0.5))'
 
-  // rgb(32,189,202)
-  // linear-gradient(to right, rgb(32,189,202, 1), rgb(21,43,67))
+  const debouncedEventHandler = React.useMemo(() => debounce(snap.addMarker, 150), []);
+
+  React.useEffect(() => {
+    return () => {
+      debouncedEventHandler.cancel();
+    };
+  }, []);
+
   return (
     <Stack
       height={["full", "100vh"]}
@@ -166,7 +169,7 @@ export default function App() {
 
               <Stack isInline spacing={6} py={[2, 4]}>
                 <Button
-                  onClick={() => snap.addMarker("call")}
+                  onClick={() => debouncedEventHandler("call")}
                   size="lg"
                   width="full"
                   rounded="3xl"
@@ -188,7 +191,7 @@ export default function App() {
                   </Box>
                 </Button>
                 <Button
-                  onClick={() => snap.addMarker("put")}
+                  onClick={() => debouncedEventHandler("put")}
                   size="lg"
                   width="full"
                   rounded="3xl"

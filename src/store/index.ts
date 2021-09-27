@@ -34,6 +34,7 @@ const state = proxy({
     }
   },
   addMarker: (betType) => {
+    if (!state.currentPrice?.time || !state.currentPrice?.value) return;
     const start = state.currentPrice.time;
     // const end = start + 5 * 1000;
     const color = betType === "call" ? "green" : "red";
