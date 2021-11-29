@@ -1,10 +1,10 @@
-import { proxy, useSnapshot } from "valtio";
-import { createChart } from "lightweight-charts";
-import React from "react";
-import { nanoid } from "nanoid";
+import { proxy, useSnapshot } from "valtio"
+import { createChart } from "lightweight-charts"
+import React from "react"
+import { nanoid } from "nanoid"
 
-let c;
-let s;
+let c
+let s
 
 const state = proxy({
   currentPrice: {},
@@ -20,25 +20,25 @@ const state = proxy({
   prevMarkers: [],
   history: [],
   setChartRefs: ({ seriesRef, chartRef }) => {
-    s = seriesRef;
-    c = chartRef;
+    s = seriesRef
+    c = chartRef
   },
   setBid: (bid) => {
     if (!+bid || +bid > state.balance) {
-      state.isBetDisabled = true;
-      state.total = 0;
+      state.isBetDisabled = true
+      state.total = 0
     } else {
-      state.bid = +bid;
-      state.total = state.bid + 0;
-      state.isBetDisabled = false;
+      state.bid = +bid
+      state.total = state.bid + 0
+      state.isBetDisabled = false
     }
   },
   addMarker: (betType) => {
-    if (!state.currentPrice?.time || !state.currentPrice?.value) return;
-    const start = state.currentPrice.time;
+    if (!state.currentPrice?.time || !state.currentPrice?.value) return
+    const start = state.currentPrice.time
     // const end = start + 5 * 1000;
-    const color = betType === "call" ? "green" : "red";
-    const shape = betType === "call" ? "arrowUp" : "arrowDown";
+    const color = betType === "call" ? "green" : "red"
+    const shape = betType === "call" ? "arrowUp" : "arrowDown"
 
     state.prevMarkers = [
       ...state.prevMarkers,
@@ -50,13 +50,13 @@ const state = proxy({
         size: 1,
         shape,
       },
-    ];
-    s.setMarkers(state.prevMarkers);
+    ]
+    s.setMarkers(state.prevMarkers)
 
     const priceLine = s.createPriceLine({
       price: state.currentPrice.value,
       color,
-    });
+    })
 
     const newEntry = {
       id: nanoid(),
@@ -67,9 +67,9 @@ const state = proxy({
       settlementPrice: "pending",
       status: "pending",
       secondsLeft: 60,
-    };
+    }
 
-    state.history = [newEntry, ...state.history];
+    state.history = [newEntry, ...state.history]
 
     // let intervalId = setTimeout(function run() {
     //   // const historyCopy = [...state.history];
@@ -82,83 +82,83 @@ const state = proxy({
     //   }
     // }, 1000);
 
-    const interval = 1000; // ms
-    let expected = Date.now() + interval;
+    const interval = 1000 // ms
+    let expected = Date.now() + interval
     let timeoutId = setTimeout(function step() {
-      const dt = Date.now() - expected; // the drift (positive for overshooting)
+      const dt = Date.now() - expected // the drift (positive for overshooting)
       if (dt > interval) {
         // something really bad happened. Maybe the browser (tab) was inactive?
         // possibly special handling to avoid futile "catch up" run
       }
-      const objIndex = state.history.findIndex((obj) => obj.id === newEntry.id);
-      state.history[objIndex].secondsLeft -= 1;
+      const objIndex = state.history.findIndex((obj) => obj.id === newEntry.id)
+      state.history[objIndex].secondsLeft -= 1
       if (state.history[objIndex].secondsLeft === 0) {
-        return clearTimeout(timeoutId);
+        return clearTimeout(timeoutId)
       } else {
-        expected += interval;
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(step, Math.max(0, interval - dt)); // take into account drift
+        expected += interval
+        clearTimeout(timeoutId)
+        timeoutId = setTimeout(step, Math.max(0, interval - dt)) // take into account drift
       }
-    }, interval);
+    }, interval)
 
-    const currentBid = state.bid;
+    const currentBid = state.bid
 
     setTimeout(() => {
-      clearInterval(timeoutId);
-      s.removePriceLine(priceLine);
-      const historyCopy = [...state.history];
-      const objIndex = state.history.findIndex((obj) => obj.id === newEntry.id);
-      const prevHistoryItem = historyCopy[objIndex];
+      clearInterval(timeoutId)
+      s.removePriceLine(priceLine)
+      const historyCopy = [...state.history]
+      const objIndex = state.history.findIndex((obj) => obj.id === newEntry.id)
+      const prevHistoryItem = historyCopy[objIndex]
 
-      prevHistoryItem.settlementPrice = state.currentPrice.value;
+      prevHistoryItem.settlementPrice = state.currentPrice.value
       prevHistoryItem.status = (() => {
         if (newEntry.type === "call") {
-          return prevHistoryItem.settlementPrice > prevHistoryItem.strikePrice ? "Won" : "Loss";
+          return prevHistoryItem.settlementPrice > prevHistoryItem.strikePrice ? "Won" : "Loss"
         }
         if (newEntry.type === "put") {
-          return prevHistoryItem.settlementPrice < prevHistoryItem.strikePrice ? "Won" : "Loss";
+          return prevHistoryItem.settlementPrice < prevHistoryItem.strikePrice ? "Won" : "Loss"
         }
-      })();
+      })()
 
       if (prevHistoryItem.status === "Won") {
         const profit = calcProfit({
           startPrice: prevHistoryItem.settlementPrice,
           endPrice: prevHistoryItem.strikePrice,
           bid: currentBid,
-        });
-        state.balance += profit;
-        state.winAmount += profit;
-        state.winLossRatio += profit;
-        prevHistoryItem.result = profit;
+        })
+        state.balance += profit
+        state.winAmount += profit
+        state.winLossRatio += profit
+        prevHistoryItem.result = profit
       } else {
-        state.balance -= currentBid;
-        state.lossAmount += currentBid;
-        state.winLossRatio -= currentBid;
-        prevHistoryItem.result = currentBid;
+        state.balance -= currentBid
+        state.lossAmount += currentBid
+        state.winLossRatio -= currentBid
+        prevHistoryItem.result = currentBid
       }
       if (state.bid > state.balance) {
-        state.isBetDisabled = true;
+        state.isBetDisabled = true
       }
-      const pendingCount = historyCopy.filter((item) => item.status === "pending").length;
+      const pendingCount = historyCopy.filter((item) => item.status === "pending").length
       if (pendingCount >= 10) {
-        state.isBetDisabled = true;
+        state.isBetDisabled = true
       } else {
-        state.isBetDisabled = false;
+        state.isBetDisabled = false
       }
-      state.history = historyCopy;
-    }, 60 * 1000);
+      state.history = historyCopy
+    }, 60 * 1000)
 
-    const pendingCount = state.history.filter((item) => item.status === "pending").length;
+    const pendingCount = state.history.filter((item) => item.status === "pending").length
     if (pendingCount >= 10) {
-      state.isBetDisabled = true;
+      state.isBetDisabled = true
     } else {
-      state.isBetDisabled = false;
+      state.isBetDisabled = false
     }
   },
   updateSeries: (point) => {
-    if (!point?.time || !point?.value || !s) return;
-    s.update(point);
-    state.currentPrice = point;
+    if (!point?.time || !point?.value || !s) return
+    s.update(point)
+    state.currentPrice = point
     s.setMarkers([
       ...state.prevMarkers,
       {
@@ -169,18 +169,18 @@ const state = proxy({
         id: nanoid(),
         size: 1,
       },
-    ]);
+    ])
   },
   // addSomeTime() {
   // const data = getFuturePointsInMiliseconds({ ms: 5 * 1000 });
   // s.setData(data);
   // },
-});
+})
 
 function calcProfit({ startPrice, endPrice, bid }) {
-  const premium = 1;
-  const result = Math.min(5 * premium, Math.abs(endPrice - startPrice)) * bid;
-  return result;
+  const premium = 1
+  const result = Math.min(5 * premium, Math.abs(endPrice - startPrice)) * bid
+  return result
 }
 
 // function getFuturePointsInMiliseconds({ ms }: { ms: number }) {
@@ -232,68 +232,69 @@ const defaultSettings = {
       visible: false,
     },
   },
-};
+}
 
 export function useStore() {
-  return useSnapshot(state);
+  return useSnapshot(state)
 }
 
 function useWS() {
-  const [point, setPoint] = React.useState({});
+  const [point, setPoint] = React.useState({})
 
   React.useEffect(() => {
-    const ws = new WebSocket("wss://stream.binance.com:9443/ws");
-    // const ws = new WebSocket("wss://ws.bitstamp.net");
+    const ws = new WebSocket("wss://stream.binance.com:9443/ws")
     const msg = {
       method: "SUBSCRIBE",
       params: ["btcusdt@trade"],
       id: 1,
-    };
-    // const msg = {
-    //   event: "bts:subscribe",
-    //   data: { channel: "btcusd" },
-    // };
+    }
     ws.onopen = () => {
-      ws.send(JSON.stringify(msg));
-    };
+      ws.send(JSON.stringify(msg))
+    }
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      // console.log({ data });
-      // if (!data?.E || !data?.p) return;
+      const data = JSON.parse(event.data)
+      if (!data?.E || !data?.p) return
 
       const newPoint = {
         time: data.E,
         value: parseFloat(data.p),
-      };
-      setPoint(newPoint);
+      }
+      setPoint(newPoint)
 
       return () => {
-        ws.close();
-      };
-    };
-  }, []);
+        ws.send(
+          JSON.stringify({
+            method: "UNSUBSCRIBE",
+            params: ["btcusdt@trade"],
+            id: 312,
+          })
+        )
+        ws.close()
+      }
+    }
+  }, [])
 
-  return point;
+  return point
 }
 
 export function useChartInitializer({ containerSize }) {
-  const [isLoaded, setIsloaded] = React.useState(false);
-  const snap = useStore();
-  const point = useWS();
+  const [isLoaded, setIsloaded] = React.useState(false)
+  const snap = useStore()
+  const point = useWS()
 
-  const chartRef = React.useRef();
-  const seriesRef = React.useRef();
+  const chartRef = React.useRef()
+  const seriesRef = React.useRef()
 
   React.useLayoutEffect(() => {
-    if (!containerSize?.width) return;
-    const width = containerSize.width;
-    const height = containerSize.height || 250;
+    if (!containerSize?.width) return
+    const width = containerSize.width
+    const height = containerSize.height || 250
 
     chartRef.current = createChart(document.getElementById("container"), {
       width,
       height,
       ...defaultSettings,
-    });
+    })
 
     seriesRef.current = chartRef.current.addAreaSeries({
       topColor: "rgba(33, 150, 243, 0.56)",
@@ -301,24 +302,23 @@ export function useChartInitializer({ containerSize }) {
       lineColor: "rgba(33, 150, 243, 1)",
       lineWidth: 1,
       lastPriceAnimation: 1,
-    });
+    })
 
     chartRef.current.timeScale().setVisibleLogicalRange({
       from: -4000,
       to: 0,
-    });
+    })
 
-    snap.setChartRefs({ seriesRef: seriesRef.current, chartRef: chartRef.current });
+    snap.setChartRefs({ seriesRef: seriesRef.current, chartRef: chartRef.current })
 
-    setIsloaded(true);
-  }, [containerSize]);
+    setIsloaded(true)
+  }, [containerSize])
 
   React.useEffect(() => {
     if (seriesRef.current) {
-      snap.updateSeries(point);
-      // snap.updateSeries({ point, seriesRef: seriesRef.current });
+      snap.updateSeries(point)
     }
-  }, [point]);
+  }, [point])
 
-  return { isLoaded };
+  return { isLoaded }
 }

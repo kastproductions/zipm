@@ -1,22 +1,22 @@
-import React from "react";
-import { useChartInitializer } from "./store";
+import React from "react"
+import { useChartInitializer } from "./store"
 
 export function PriceChart({ containerSize }) {
-  useChartInitializer({ containerSize });
-  return <div id="container" />;
+  useChartInitializer({ containerSize })
+  return <div id="container" />
 }
 
 // Hook
 function usePrevious(value) {
   // The ref object is a generic container whose current property is mutable ...
   // ... and can hold any value, similar to an instance property on a class
-  const ref = React.useRef();
+  const ref = React.useRef()
   // Store current value in ref
   React.useEffect(() => {
-    ref.current = value;
-  }, [value]); // Only re-run if value changes
+    ref.current = value
+  }, [value]) // Only re-run if value changes
   // Return previous value (happens before update in useEffect above)
-  return ref.current;
+  return ref.current
 }
 
 function useWindowSize() {
@@ -25,7 +25,7 @@ function useWindowSize() {
   const [windowSize, setWindowSize] = React.useState({
     width: undefined,
     height: undefined,
-  });
+  })
   React.useEffect(() => {
     // Handler to call on window resize
     function handleResize() {
@@ -33,16 +33,16 @@ function useWindowSize() {
       setWindowSize({
         width: window.innerWidth,
         height: window.innerHeight,
-      });
+      })
     }
     // Add event listener
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", handleResize)
     // Call handler right away so state gets updated with initial window size
-    handleResize();
+    handleResize()
     // Remove event listener on cleanup
-    return () => window.removeEventListener("resize", handleResize);
-  }, []); // Empty array ensures that effect is only run on mount
-  return windowSize;
+    return () => window.removeEventListener("resize", handleResize)
+  }, []) // Empty array ensures that effect is only run on mount
+  return windowSize
 }
 
 const data = [
@@ -346,4 +346,4 @@ const data = [
   { time: "2019-06-03", value: 84.35 },
   { time: "2019-06-04", value: 85.66 },
   { time: "2019-06-05", value: 86.51 },
-];
+]

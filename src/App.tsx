@@ -1,4 +1,4 @@
-import React from "react";
+import React from "react"
 import {
   Spacer,
   Flex,
@@ -30,41 +30,41 @@ import {
   Td,
   TableCaption,
   Icon,
-} from "@chakra-ui/react";
-import { PriceChart } from "./PriceChart";
-import { history } from "./mock-data";
-import { useStore } from "./store";
-import { format, formatDistance, formatRelative, subDays } from "date-fns";
-import { FiTrendingDown, FiTrendingUp } from "react-icons/fi";
-import debounce from "lodash.debounce";
+} from "@chakra-ui/react"
+import { PriceChart } from "./PriceChart"
+import { history } from "./mock-data"
+import { useStore } from "./store"
+import { format, formatDistance, formatRelative, subDays } from "date-fns"
+import { FiTrendingDown, FiTrendingUp } from "react-icons/fi"
+import debounce from "lodash.debounce"
 
 declare global {
   interface Window {
-    Highcharts: any;
+    Highcharts: any
   }
 }
 
 export default function App() {
-  const snap = useStore();
-  const prevPrice = usePrevious(snap.currentPrice);
+  const snap = useStore()
+  const prevPrice = usePrevious(snap.currentPrice)
 
-  const chartContainerRef = React.useRef();
-  const [containerSize, setSize] = React.useState(null);
+  const chartContainerRef = React.useRef()
+  const [containerSize, setSize] = React.useState(null)
   React.useEffect(() => {
     const size = {
       width: chartContainerRef.current.offsetWidth,
       height: chartContainerRef.current.offsetHeight,
-    };
-    setSize(size);
-  }, []);
+    }
+    setSize(size)
+  }, [])
 
-  const debouncedEventHandler = React.useMemo(() => debounce(snap.addMarker, 150), []);
+  const debouncedEventHandler = React.useMemo(() => debounce(snap.addMarker, 150), [])
 
   React.useEffect(() => {
     return () => {
-      debouncedEventHandler.cancel();
-    };
-  }, []);
+      debouncedEventHandler.cancel()
+    }
+  }, [])
 
   return (
     <Stack
@@ -234,13 +234,13 @@ export default function App() {
                         <Box width={20}>
                           <Progress hasStripe value={(item.secondsLeft * 100) / 60} colorScheme="blue" />
                         </Box>
-                      );
+                      )
                     } else {
                       return (
                         <Badge minW={20} py={0} colorScheme={item.status === "Won" ? "green" : "red"}>
                           {item.status} ${item.result.toFixed(2)}
                         </Badge>
-                      );
+                      )
                     }
                   }}
                 />
@@ -331,7 +331,7 @@ export default function App() {
         </Box>
       </Stack>
     </Stack>
-  );
+  )
 }
 
 function MobileListItem({ name, renderValue }) {
@@ -344,7 +344,7 @@ function MobileListItem({ name, renderValue }) {
         {renderValue()}
       </Stack>
     </Stack>
-  );
+  )
 }
 
 // {
@@ -424,14 +424,14 @@ function MobileListItem({ name, renderValue }) {
 function usePrevious(value) {
   // The ref object is a generic container whose current property is mutable ...
   // ... and can hold any value, similar to an instance property on a class
-  const ref = React.useRef();
+  const ref = React.useRef()
   // Store current value in ref
   React.useEffect(() => {
     // console.log({ value })
-    ref.current = value;
-  }, [value]); // Only re-run if value changes
+    ref.current = value
+  }, [value]) // Only re-run if value changes
   // Return previous value (happens before update in useEffect above)
-  return ref.current;
+  return ref.current
 }
 
 // Highcharts.getJSON(

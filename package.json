@@ -5,8 +5,7 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "lint": "eslint src --ext .js",
-    "lint:fix": "eslint src --ext .tsx --fix"
+    "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
   },
   "dependencies": {
     "@chakra-ui/react": "^1.6.8",
